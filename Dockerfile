@@ -1,11 +1,15 @@
 FROM atendai/evolution-api:v1.6.1
 
-# Render prefers port 10000 for its free tier
+# Baking all config directly into the image - guaranteed to work
 ENV SERVER_PORT=10000
 ENV SERVER_HOST=0.0.0.0
+ENV AUTHENTICATION_TYPE=apikey
+ENV AUTHENTICATION_API_KEY=vakabot123
+ENV CACHE_REDIS_ENABLED=false
+ENV CORS_ORIGIN=*
+ENV CLEANUP_IGNORE_CONNECTED=true
+ENV DATABASE_ENABLED=false
 
-# Expose the port
 EXPOSE 10000
 
-# Run the API
 CMD ["node", "dist/src/main.js"]
