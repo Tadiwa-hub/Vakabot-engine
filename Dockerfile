@@ -4,11 +4,12 @@ FROM evoapicloud/evolution-api:latest
 ENV SERVER_PORT=10000
 ENV SERVER_HOST=0.0.0.0
 
-# The "Fake" Database Validation Fix
-# We set it to postgresql to pass the startup check, even though it's disabled.
-ENV DATABASE_ENABLED=false
+# Database Configuration (Real Neon)
+ENV DATABASE_ENABLED=true
 ENV DATABASE_CONNECTION_TYPE=postgresql
-ENV DATABASE_CONNECTION_URI=postgresql://postgres:postgres@localhost:5432/evolution?sslmode=disable
+# We leave the URI empty here so we can add it safely in Render
+ENV DATABASE_CONNECTION_URI=""
+ENV DATABASE_CONNECTION_CLIENT_NAME=evolution_prod
 
 # Authentication
 ENV AUTHENTICATION_TYPE=apikey
@@ -18,6 +19,7 @@ ENV AUTHENTICATION_EXPOSE_DOMAIN=true
 # Webhook
 ENV WEBHOOK_GLOBAL_ENABLED=true
 ENV WEBHOOK_GLOBAL_URL=https://vakabot-backend.zimbabwe.workers.dev/webhook/evolution
+ENV WEBHOOK_EVENTS_ERRORS=true
 
 EXPOSE 10000
 
