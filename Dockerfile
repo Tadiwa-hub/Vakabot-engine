@@ -1,20 +1,20 @@
-# We are moving to the new official v2.1 image repository
 FROM evoapicloud/evolution-api:v2.1.1
 
-# Configuration for v2
+# Server Config
 ENV SERVER_PORT=10000
 ENV SERVER_HOST=0.0.0.0
+
+# Database - Satisfying v2 validation even though it's disabled
+ENV DATABASE_ENABLED=false
+ENV DATABASE_CONNECTION_TYPE=sqlite
+ENV DATABASE_CONNECTION_CLIENT_NAME=evolution_local
 
 # Authentication
 ENV AUTHENTICATION_TYPE=apikey
 ENV AUTHENTICATION_API_KEY=vakabot123
 ENV AUTHENTICATION_EXPOSE_DOMAIN=true
 
-# Disable internal database/cache for now to match your previous setup
-ENV DATABASE_ENABLED=false
-ENV CACHE_REDIS_ENABLED=false
-
-# Webhook Settings
+# Webhook
 ENV WEBHOOK_GLOBAL_ENABLED=true
 ENV WEBHOOK_GLOBAL_URL=https://vakabot-backend.zimbabwe.workers.dev/webhook/evolution
 ENV WEBHOOK_EVENTS_ERRORS=true
