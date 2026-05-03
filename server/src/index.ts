@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { getDb } from './db';
 import { EvolutionClient } from './lib/evolution';
-import { instances, autoReplies } from './db/schema';
+import { users, instances, autoReplies } from './db/schema';
 import { eq } from 'drizzle-orm';
 
 type Bindings = {
@@ -60,40 +60,54 @@ app.get('/api/instance/:userId', async (c) => {
 
 // API: Create Instance
 app.post('/api/instance', async (c) => {
-  const { userId, phoneNumber } = await c.req.json();
+  const { userId, phoneNumber, email } = await c.req.json();
   const { db, evolution } = getTools(c.env);
   
-  const instanceName = `vaka__${Math.random().toString(36).substring(7).toUpperCase()}`;
-  const engineResponse = await evolution.createInstance(instanceName);
-  const initialQr = engineResponse.base64 || engineResponse.qrcode?.base64 || null;
+  console.log(`[Backend] Creating instance for user: ${userId}, phone: ${phoneNumber}`);
 
-  const newInstance = {
-    id: crypto.randomUUID(),
-    userId,
-    instanceName,
-    phoneNumber,
-    qrcode: initialQr,
-    status: "DISCONNECTED",
-    isActive: true
-  };
-
-  await db.insert(instances).values(newInstance);
-
-  // Automatically set the webhook for this instance
-  // Note: We use the backend's own URL for the webhook
-  const backendUrl = new URL(c.req.url).origin;
   try {
-    await evolution.setWebhook(instanceName, `${backendUrl}/webhook/evolution`);
-  } catch (e) {
-    console.error("Failed to set initial webhook:", e);
+    // 1. Ensure User exists in our DB (Upsert)
+    // If email wasn't provided, we use a placeholder or handle it
+    await db.insert(users)
+      .values({ id: userId, email: email || 'user@example.com' })
+      .onConflictDoNothing();
+
+    // 2. Create Evolution Instance
+    const instanceName = `vaka__${Math.random().toString(36).substring(7).toUpperCase()}`;
+    const engineResponse = await evolution.createInstance(instanceName);
+    const initialQr = engineResponse.base64 || engineResponse.qrcode?.base64 || null;
+
+    const newInstance = {
+      id: crypto.randomUUID(),
+      userId,
+      instanceName,
+      phoneNumber,
+      qrcode: initialQr,
+      status: "DISCONNECTED",
+      isActive: true
+    };
+
+    // 3. Save to DB
+    await db.insert(instances).values(newInstance);
+
+    // 4. Automatically set the webhook
+    const backendUrl = new URL(c.req.url).origin;
+    try {
+      await evolution.setWebhook(instanceName, `${backendUrl}/webhook/evolution`);
+    } catch (e) {
+      console.error("Failed to set initial webhook:", e);
+    }
+
+    // 5. Migrate rules
+    await db.update(autoReplies)
+      .set({ instanceId: newInstance.id })
+      .where(eq(autoReplies.userId, userId));
+
+    return c.json(newInstance);
+  } catch (error: any) {
+    console.error("[Backend Error] Instance Creation Failed:", error);
+    return c.json({ error: "Creation failed", details: error.message }, 500);
   }
-
-  // Migrate any existing auto-reply rules for this user to the new instance
-  await db.update(autoReplies)
-    .set({ instanceId: newInstance.id })
-    .where(eq(autoReplies.userId, userId));
-
-  return c.json(newInstance);
 });
 
 // API: Configure Webhook
