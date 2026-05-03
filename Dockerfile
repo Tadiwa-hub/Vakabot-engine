@@ -1,4 +1,4 @@
-FROM atendai/evolution-api:v1.6.1
+FROM atendai/evolution-api:v1.8.2
 
 # Baking all config directly into the image - guaranteed to work
 ENV SERVER_PORT=10000
