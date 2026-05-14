@@ -350,9 +350,13 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 120px;
+  height: 120px;
 }
 
 .usageRing {
+  width: 100%;
+  height: 100%;
   transform: rotate(-90deg);
   filter: drop-shadow(0 0 12px var(--primary-glow));
 }

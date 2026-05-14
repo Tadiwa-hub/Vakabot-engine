@@ -898,7 +898,7 @@ export default function DashboardPage() {
                     <h3 className={dashStyles.sectionTitle}><Zap size={18} color="var(--primary)" /> Usage Tracking</h3>
                     <div className={dashStyles.usageContainer}>
                       <div className={dashStyles.usageRingWrapper}>
-                        <svg className={dashStyles.usageRing} width="120" height="120">
+                        <svg className={dashStyles.usageRing} viewBox="0 0 120 120">
                           <circle className={dashStyles.usageRingBg} cx="60" cy="60" r="50" />
                           <circle 
                             className={dashStyles.usageRingProgress} 
