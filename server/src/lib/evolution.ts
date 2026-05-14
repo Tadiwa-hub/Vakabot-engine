@@ -31,12 +31,19 @@ export class EvolutionClient {
   async createInstance(instanceName: string) {
     return this.request("/instance/create", "POST", {
       instanceName,
-      qrcode: true,
+      pairingCode: true,
+      integration: "WHATSAPP-BAILEYS"
     });
   }
 
   async getConnectData(instanceName: string) {
-    return this.request(`/instance/connect/${instanceName}`);
+    return this.request(`/instance/connect/${instanceName}`, "GET");
+  }
+
+  async getPairingCode(instanceName: string, phoneNumber: string) {
+    // Sanitize: digits only (strip + as well, as some versions prefer it)
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
+    return this.request(`/instance/connect/${instanceName}?number=${cleanNumber}&method=pairingCode`, "GET");
   }
 
   async setWebhook(instanceName: string, webhookUrl: string) {
@@ -45,9 +52,10 @@ export class EvolutionClient {
         enabled: true,
         url: webhookUrl,
         events: [
-          "messages.upsert",
-          "qrcode.updated",
-          "connection.update"
+          "MESSAGES_UPSERT",
+          "QRCODE_UPDATED",
+          "CONNECTION_UPDATE",
+          "PRESENCE_UPDATE"
         ]
       }
     });
@@ -61,12 +69,39 @@ export class EvolutionClient {
     return this.request(`/instance/delete/${instanceName}`, "DELETE");
   }
 
-  async sendMessage(instanceName: string, jid: string, text: string) {
-    console.log(`[Evolution] Preparing to send to: ${jid}`);
+  async sendMessage(instanceName: string, jid: string, text: string, delay = 0) {
+    console.log(`[Evolution] Sending to: ${jid} | Text: ${text.substring(0, 30)}... | Delay: ${delay}ms`);
     return this.request(`/message/sendText/${instanceName}`, "POST", {
       number: jid,
-      text: text
+      text: text,
+      delay: delay,
+      linkPreview: false // Force off for speed
     });
+  }
+
+  async sendPresence(instanceName: string, jid: string, state: "composing" | "recording" | "paused" | "available") {
+    // Note: Some v2 versions 404 on this. We rely on 'delay' in sendMessage for auto-typing.
+    try {
+      return await this.request(`/chat/updatePresence/${instanceName}`, "POST", {
+        number: jid,
+        presence: state
+      });
+    } catch (e) {
+      console.warn(`[Evolution] sendPresence failed (likely disabled on engine): ${e.message}`);
+      return { success: true, status: "MOCKED" };
+    }
+  }
+
+  async markRead(instanceName: string, jid: string) {
+    try {
+      return await this.request(`/chat/markRead/${instanceName}`, "POST", {
+        number: jid,
+        read: true
+      });
+    } catch (e) {
+      console.warn(`[Evolution] markRead failed (likely disabled on engine): ${e.message}`);
+      return { success: true, status: "MOCKED" };
+    }
   }
 
   async getContactProfile(instanceName: string, jid: string) {

@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables & secrets - NEVER commit these
+.env
+.env.*
+!.env.example
+server/.env
+server/.dev.vars
