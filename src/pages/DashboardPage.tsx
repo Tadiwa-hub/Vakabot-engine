@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import authStyles from "./Auth.module.css";
 import dashStyles from "./Dashboard.module.css";
-import { Bot, Zap, Loader2, MessageSquare, Webhook, Settings, CreditCard, X, Users, Calendar, BarChart3 } from "lucide-react";
+import { Bot, Zap, Loader2, MessageSquare, CreditCard } from "lucide-react";
 
 const API_BASE = "https://vakabot-backend.zimbabwe.workers.dev/api";
 
-type Tab = 'overview' | 'contacts' | 'scheduled' | 'analytics' | 'auto-replies' | 'services' | 'webhooks' | 'profile' | 'settings' | 'plans' | 'admin';
+type Tab = 'overview' | 'auto-replies' | 'profile' | 'plans' | 'admin';
 
 const ADMIN_ID = 'user_3DIOS7jr8olpHz10a4aZLIWwhuh';
 
@@ -21,19 +21,12 @@ export default function DashboardPage() {
   useEffect(() => {
     console.log("Current Tab:", activeTab);
   }, [activeTab]);
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [savingWebhook, setSavingWebhook] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [rules, setRules] = useState<any[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
   const [newReply, setNewReply] = useState("");
   const [addingRule, setAddingRule] = useState(false);
-  const [services, setServices] = useState<any[]>([]);
-  const [newServiceName, setNewServiceName] = useState("");
-  const [newServiceDesc, setNewServiceDesc] = useState("");
-  const [newServicePrice, setNewServicePrice] = useState("");
-  const [addingService, setAddingService] = useState(false);
   
   // Business Profile State
   const [businessName, setBusinessName] = useState("");
@@ -43,10 +36,11 @@ export default function DashboardPage() {
   const [ownerName, setOwnerName] = useState("");
   const [aiInstructions, setAiInstructions] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
   const [plan, setPlan] = useState<any>(null);
   const [aiUsageCount, setAiUsageCount] = useState(0);
   const [pairingCode, setPairingCode] = useState("");
-  const [pairingMode, setPairingMode] = useState<'qr' | 'code'>('qr');
   const [fetchingCode, setFetchingCode] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -62,12 +56,6 @@ export default function DashboardPage() {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminSearch, setAdminSearch] = useState("");
-
-  // New Feature States
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
-  const [contactSearch, setContactSearch] = useState("");
 
   const plansList = [
     { id: 'free', name: 'Free Starter', price: 0, aiLimit: 20, features: ['20 AI Messages/mo', 'Basic Auto-Replies', 'Community Support'] },
@@ -132,7 +120,6 @@ export default function DashboardPage() {
 
   async function handleGetPairingCode() {
     setFetchingCode(true);
-    setPairingMode('code');
     try {
       const res = await fetch(`${API_BASE}/instance/${user?.id}/pairing-code`);
       const data = await res.json();
@@ -262,32 +249,8 @@ export default function DashboardPage() {
     }
   }
 
-  // Effect to populate webhookUrl when instance loads
-  useEffect(() => {
-    if (instance?.webhookUrl && !webhookUrl) {
-      setWebhookUrl(instance.webhookUrl);
-    }
-  }, [instance?.webhookUrl]);
-
-  async function handleSaveWebhook() {
-    if (!webhookUrl) return;
-    setSavingWebhook(true);
-    try {
-      await fetch(`${API_BASE}/webhook/config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id, webhookUrl }),
-      });
-      alert("Webhook saved and activated on the Engine!");
-    } catch (e) {
-      alert("Failed to save webhook.");
-    } finally {
-      setSavingWebhook(false);
-    }
-  }
-
   async function handleDisconnect() {
-    if (!confirm("Are you sure you want to disconnect? You will need to scan a new QR code to reconnect.")) return;
+    if (!confirm("Are you sure you want to disconnect? You will need to re-pair your phone to reconnect.")) return;
     setDisconnecting(true);
     try {
       await fetch(`${API_BASE}/instance/${user?.id}/disconnect`, { method: "POST" });
@@ -382,78 +345,8 @@ export default function DashboardPage() {
     if (!user) return;
     
     if (activeTab === 'auto-replies') fetchRules();
-    if (activeTab === 'services') fetchServices();
     if (activeTab === 'admin') fetchAdminData();
-    if (activeTab === 'contacts') fetchContacts();
-    if (activeTab === 'scheduled') fetchScheduled();
-    if (activeTab === 'analytics') fetchDetailedAnalytics();
   }, [activeTab, user]);
-
-  async function fetchContacts() {
-    try {
-      const res = await fetch(`${API_BASE}/contacts/${user?.id}`);
-      const data = await res.json();
-      setContacts(data.contacts || []);
-    } catch (e) {
-      console.error("Fetch contacts error:", e);
-    }
-  }
-
-  async function fetchScheduled() {
-    try {
-      const res = await fetch(`${API_BASE}/scheduled-messages/${user?.id}`);
-      const data = await res.json();
-      setScheduledMessages(data.scheduledMessages || []);
-    } catch (e) {
-      console.error("Fetch scheduled error:", e);
-    }
-  }
-
-  async function fetchDetailedAnalytics() {
-    try {
-      const res = await fetch(`${API_BASE}/analytics/${user?.id}`);
-      const data = await res.json();
-      setAnalyticsData(data);
-    } catch (e) {
-      console.error("Fetch analytics error:", e);
-    }
-  }
-
-  async function fetchServices() {
-    try {
-      const res = await fetch(`${API_BASE}/services/${user?.id}`);
-      const data = await res.json();
-      setServices(data.services || []);
-    } catch (e) {
-      console.error("Fetch services error:", e);
-    }
-  }
-
-  async function handleAddService() {
-    if (!newServiceName) return;
-    setAddingService(true);
-    try {
-      const res = await fetch(`${API_BASE}/services`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user?.id, 
-          name: newServiceName, 
-          description: newServiceDesc, 
-          price: newServicePrice 
-        }),
-      });
-      const data = await res.json();
-      setServices([...services, data.service]);
-      setNewServiceName("");
-      setNewServiceDesc("");
-      setNewServicePrice("");
-    } catch (e) {
-      alert("Failed to add service.");
-    } finally {
-      setAddingService(false);
-    }
-  }
 
   async function fetchAdminData() {
     if (user?.id !== ADMIN_ID) return;
@@ -492,15 +385,6 @@ export default function DashboardPage() {
     if (activeTab === 'admin') fetchAdminData();
   }, [activeTab]);
 
-  async function handleDeleteService(id: string) {
-    try {
-      await fetch(`${API_BASE}/services/${id}`, { method: "DELETE" });
-      setServices(services.filter(s => s.id !== id));
-    } catch (e) {
-      alert("Failed to delete service.");
-    }
-  }
-
   if (loading) return (
     <div className={authStyles.page}>
       <Loader2 className={authStyles.spinner} size={40} style={{ color: 'var(--primary)' }} />
@@ -532,67 +416,16 @@ export default function DashboardPage() {
             <MessageSquare size={18} /> Auto Replies
           </button>
           <button 
-            className={`${dashStyles.navItem} ${activeTab === 'services' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('services')}
-            disabled={!instance || instance.status !== "CONNECTED"}
-          >
-            <Bot size={18} /> Services
-          </button>
-          <button 
-            className={`${dashStyles.navItem} ${activeTab === 'contacts' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('contacts')}
-            disabled={!instance || instance.status !== "CONNECTED"}
-          >
-            <Users size={18} /> Contacts
-          </button>
-          <button 
-            className={`${dashStyles.navItem} ${activeTab === 'scheduled' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('scheduled')}
-            disabled={!instance || instance.status !== "CONNECTED"}
-          >
-            <Calendar size={18} /> Scheduled
-          </button>
-          <button 
-            className={`${dashStyles.navItem} ${activeTab === 'analytics' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('analytics')}
-            disabled={!instance || instance.status !== "CONNECTED"}
-          >
-            <BarChart3 size={18} /> Analytics
-          </button>
-          
-          {user?.id === ADMIN_ID && (
-            <button 
-              className={`${dashStyles.navItem} ${activeTab === 'admin' ? dashStyles.active : ''}`}
-              onClick={() => setActiveTab('admin')}
-              style={{ marginTop: 'auto', color: '#f59e0b', borderTop: '1px solid rgba(245,158,11,0.1)', paddingTop: '1rem' }}
-            >
-              <Zap size={18} /> Platform Admin
-            </button>
-          )}
-          <button 
-            className={`${dashStyles.navItem} ${activeTab === 'webhooks' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('webhooks')}
-            disabled={!instance || instance.status !== "CONNECTED"}
-          >
-            <Webhook size={18} /> Webhooks
-          </button>
-          <button 
             className={`${dashStyles.navItem} ${activeTab === 'profile' ? dashStyles.active : ''}`}
             onClick={() => setActiveTab('profile')}
           >
-            <Bot size={18} /> Business Profile
+            <Bot size={18} /> Business & AI
           </button>
           <button 
             className={`${dashStyles.navItem} ${activeTab === 'plans' ? dashStyles.active : ''}`}
             onClick={() => setActiveTab('plans')}
           >
-            <CreditCard size={18} /> Subscription Plans
-          </button>
-          <button 
-            className={`${dashStyles.navItem} ${activeTab === 'settings' ? dashStyles.active : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            <Settings size={18} /> Settings
+            <CreditCard size={18} /> Subscription
           </button>
           {user?.id === ADMIN_ID && (
             <button 
@@ -685,140 +518,98 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <h1 className={authStyles.title}>Pairing Required</h1>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                          <button 
-                            onClick={() => setPairingMode('qr')}
-                            className={`${dashStyles.btn} ${pairingMode === 'qr' ? '' : dashStyles.btnOutline}`}
-                            style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                          >
-                            QR Code
-                          </button>
-                          <button 
-                            onClick={handleGetPairingCode}
-                            className={`${dashStyles.btn} ${pairingMode === 'code' ? '' : dashStyles.btnOutline}`}
-                            style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                          >
-                            Phone Code
-                          </button>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                          <p style={{ color: '#8b949e', fontSize: '0.9rem' }}>
+                            Follow the instructions below to link your WhatsApp.
+                          </p>
                         </div>
 
-                        {pairingMode === 'qr' ? (
-                          <div style={{ margin: '0 0 1.5rem 0', padding: '1rem', background: 'white', borderRadius: '16px', display: 'inline-block' }}>
-                            {instance.qrcode ? (
-                              <img src={instance.qrcode} alt="QR Code" style={{ width: '220px', height: '220px' }} />
-                            ) : (
-                              <div style={{ width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Loader2 className={authStyles.spinner} color="black" />
+                        <div style={{ margin: '0 0 1.5rem 0', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', border: '1px dashed rgba(255,255,255,0.2)' }}>
+                          {fetchingCode ? (
+                            <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Loader2 className={authStyles.spinner} color="white" />
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center', width: '100%' }}>
+                              <p style={{ color: '#ef4444', fontSize: '0.75rem', marginBottom: '1rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '4px' }}>
+                                ⚠️ Ensure the number below matches your WhatsApp number exactly!
+                              </p>
+                              <p style={{ color: '#8b949e', fontSize: '0.8rem', marginBottom: '0.8rem' }}>Pairing Code for <strong>{instance?.phoneNumber}</strong>:</p>
+                              <div style={{ 
+                                fontSize: '2rem', 
+                                fontWeight: '800', 
+                                letterSpacing: '2px', 
+                                color: 'var(--primary)',
+                                background: 'rgba(0,0,0,0.2)',
+                                padding: '1rem',
+                                borderRadius: '8px',
+                                marginBottom: '1rem',
+                                wordBreak: 'break-all'
+                              }}>
+                                {pairingCode || "---- ----"}
                               </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div style={{ margin: '0 0 1.5rem 0', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', border: '1px dashed rgba(255,255,255,0.2)' }}>
-                            {fetchingCode ? (
-                              <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Loader2 className={authStyles.spinner} color="white" />
-                              </div>
-                            ) : (
-                              <div style={{ textAlign: 'center', width: '100%' }}>
-                                <p style={{ color: '#ef4444', fontSize: '0.75rem', marginBottom: '1rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '4px' }}>
-                                  ⚠️ Ensure the number below matches your WhatsApp number exactly!
-                                </p>
-                                <p style={{ color: '#8b949e', fontSize: '0.8rem', marginBottom: '0.8rem' }}>Pairing Code for <strong>{instance?.phoneNumber}</strong>:</p>
-                                <div style={{ 
-                                  fontSize: '2rem', 
-                                  fontWeight: '800', 
-                                  letterSpacing: '2px', 
-                                  color: 'var(--primary)',
-                                  background: 'rgba(0,0,0,0.2)',
-                                  padding: '1rem',
-                                  borderRadius: '8px',
-                                  marginBottom: '1rem',
-                                  wordBreak: 'break-all'
-                                }}>
-                                  {pairingCode || "---- ----"}
-                                </div>
-                                
-                                {timeLeft > 0 ? (
-                                  <div style={{ marginBottom: '1rem' }}>
-                                    <div className={dashStyles.progressBarWrapper}>
-                                      <div 
-                                        className={dashStyles.progressBar} 
-                                        style={{ width: `${(timeLeft / 60) * 100}%`, background: timeLeft < 15 ? '#ef4444' : 'var(--primary)' }} 
-                                      />
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: '#8b949e', marginTop: '0.5rem' }}>
-                                      Code expires in {timeLeft}s
-                                    </p>
+                              
+                              {timeLeft > 0 ? (
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <div className={dashStyles.progressBarWrapper}>
+                                    <div 
+                                      className={dashStyles.progressBar} 
+                                      style={{ width: `${(timeLeft / 60) * 100}%`, background: timeLeft < 15 ? '#ef4444' : 'var(--primary)' }} 
+                                    />
                                   </div>
-                                ) : pairingCode && (
-                                  <p style={{ fontSize: '0.75rem', color: '#ef4444', marginBottom: '1rem' }}>
-                                    Code expired. Please refresh.
+                                  <p style={{ fontSize: '0.75rem', color: '#8b949e', marginTop: '0.5rem' }}>
+                                    Code expires in {timeLeft}s
                                   </p>
-                                )}
+                                </div>
+                              ) : pairingCode && (
+                                <p style={{ fontSize: '0.75rem', color: '#ef4444', marginBottom: '1rem' }}>
+                                  Code expired. Please refresh.
+                                </p>
+                              )}
 
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                  {pairingCode && timeLeft > 0 && (
-                                    <button 
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(pairingCode);
-                                        alert("Code copied!");
-                                      }}
-                                      className={dashStyles.btn}
-                                      style={{ fontSize: '0.8rem', padding: '0.4rem 1rem' }}
-                                    >
-                                      Copy Code
-                                    </button>
-                                  )}
+                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                {pairingCode && timeLeft > 0 && (
                                   <button 
-                                    onClick={handleRefreshCode}
-                                    disabled={refreshing}
-                                    className={`${dashStyles.btn} ${dashStyles.btnOutline}`}
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(pairingCode);
+                                      alert("Code copied!");
+                                    }}
+                                    className={dashStyles.btn}
                                     style={{ fontSize: '0.8rem', padding: '0.4rem 1rem' }}
                                   >
-                                    {refreshing ? "Refreshing..." : (timeLeft === 0 ? "Get New Code" : "Refresh")}
+                                    Copy Code
                                   </button>
-                                </div>
+                                )}
+                                <button 
+                                  onClick={handleRefreshCode}
+                                  disabled={refreshing}
+                                  className={`${dashStyles.btn} ${dashStyles.btnOutline}`}
+                                  style={{ fontSize: '0.8rem', padding: '0.4rem 1rem' }}
+                                >
+                                  {refreshing ? "Refreshing..." : (timeLeft === 0 ? "Get New Code" : "Refresh")}
+                                </button>
                               </div>
-                            )}
-                          </div>
-                        )}
+                            </div>
+                          )}
+                        </div>
 
                         <div style={{ textAlign: 'left', background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                           <p style={{ marginBottom: '0.8rem', color: 'white', fontWeight: '600', fontSize: '0.95rem' }}>
-                            {pairingMode === 'qr' ? "Scan QR Code" : "Link with Phone Number"}
+                            Link with Phone Number
                           </p>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', color: '#8b949e', fontSize: '0.85rem' }}>
-                            {pairingMode === 'qr' ? (
-                              <>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>1</div>
-                                  <p>Open <strong>WhatsApp</strong> on your phone</p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>2</div>
-                                  <p>Tap <strong>Menu</strong> or <strong>Settings</strong> and select <strong>Linked Devices</strong></p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>3</div>
-                                  <p>Tap <strong>Link a Device</strong> and point your camera at this screen</p>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>1</div>
-                                  <p>Open <strong>WhatsApp</strong> and go to <strong>Linked Devices</strong></p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>2</div>
-                                  <p>Tap <strong>Link a Device</strong> then <strong>"Link with phone number instead"</strong> at the bottom</p>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                  <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>3</div>
-                                  <p>Enter the 8-digit code shown above on your phone</p>
-                                </div>
-                              </>
-                            )}
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                              <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>1</div>
+                              <p>Open <strong>WhatsApp</strong> and go to <strong>Linked Devices</strong></p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                              <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>2</div>
+                              <p>Tap <strong>Link a Device</strong> then <strong>"Link with phone number instead"</strong> at the bottom</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.8rem' }}>
+                              <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.7rem', color: 'white' }}>3</div>
+                              <p>Enter the 8-digit code shown above on your phone</p>
+                            </div>
                           </div>
                         </div>
                       </>
@@ -926,324 +717,6 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {activeTab === 'contacts' && (
-                <div className={dashStyles.animateIn}>
-                  <div className={dashStyles.section}>
-                    <h3 className={dashStyles.sectionTitle}><Users size={18} color="var(--primary)" /> Contact Directory</h3>
-                    <p className={dashStyles.sectionDesc}>Manage your business contacts and view interaction history.</p>
-                    
-                    <div className={dashStyles.formGrid} style={{ marginBottom: '1.5rem' }}>
-                      <input 
-                        className={dashStyles.input}
-                        placeholder="Search by name or number..."
-                        value={contactSearch}
-                        onChange={e => setContactSearch(e.target.value)}
-                        style={{ marginBottom: 0 }}
-                      />
-                    </div>
-
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                          <thead>
-                            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Name</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>JID / Phone</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Last Interaction</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {contacts.filter(c => 
-                              !contactSearch || 
-                              c.name?.toLowerCase().includes(contactSearch.toLowerCase()) || 
-                              c.phoneNumber?.includes(contactSearch) || 
-                              c.jid?.includes(contactSearch)
-                            ).map(contact => (
-                              <tr key={contact.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '1rem' }}>{contact.name || 'Unknown'}</td>
-                                <td style={{ padding: '1rem' }}>{contact.jid}</td>
-                                <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
-                                  {contact.lastInteractionAt ? new Date(contact.lastInteractionAt).toLocaleDateString() : 'Never'}
-                                </td>
-                                <td style={{ padding: '1rem' }}>
-                                  <button 
-                                    className={`${dashStyles.btn} ${dashStyles.btnOutline}`}
-                                    style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
-                                    onClick={() => {
-                                      const name = prompt("Enter contact name", contact.name || "");
-                                      if (name !== null) {
-                                        fetch(`${API_BASE}/contacts/${contact.id}`, {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ name })
-                                        }).then(() => fetchContacts());
-                                      }
-                                    }}
-                                  >
-                                    Edit
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                            {contacts.length === 0 && (
-                              <tr>
-                                <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                  No contacts found. They will appear here as people message your bot.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'scheduled' && (
-                <div className={dashStyles.animateIn}>
-                  <div className={dashStyles.section}>
-                    <h3 className={dashStyles.sectionTitle}><Calendar size={18} color="var(--primary)" /> Schedule Broadcast</h3>
-                    <p className={dashStyles.sectionDesc}>Plan and schedule messages to be sent at a specific time.</p>
-                    
-                    <div style={{ maxWidth: '600px' }}>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label className={authStyles.label}>Recipient JID (e.g. 263... @s.whatsapp.net)</label>
-                        <input 
-                          className={dashStyles.input}
-                          id="sched-jid"
-                          placeholder="263777000000@s.whatsapp.net"
-                        />
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label className={authStyles.label}>Message Content</label>
-                        <textarea 
-                          className={dashStyles.input}
-                          id="sched-msg"
-                          rows={4}
-                          placeholder="Type your message here..."
-                          style={{ resize: 'none' }}
-                        />
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label className={authStyles.label}>Scheduled Date & Time</label>
-                        <input 
-                          type="datetime-local"
-                          className={dashStyles.input}
-                          id="sched-time"
-                        />
-                      </div>
-                      <button 
-                        className={dashStyles.btn}
-                        onClick={() => {
-                          const jid = (document.getElementById('sched-jid') as HTMLInputElement).value;
-                          const message = (document.getElementById('sched-msg') as HTMLTextAreaElement).value;
-                          const time = (document.getElementById('sched-time') as HTMLInputElement).value;
-                          
-                          if (!jid || !message || !time) return alert("Fill all fields");
-                          
-                          fetch(`${API_BASE}/scheduled-messages`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              userId: user?.id,
-                              instanceId: instance.id,
-                              remoteJid: jid,
-                              message,
-                              scheduledAt: new Date(time).toISOString()
-                            })
-                          }).then(res => res.json()).then(data => {
-                            if (data.success) {
-                              alert("Message scheduled!");
-                              fetchScheduled();
-                              (document.getElementById('sched-jid') as HTMLInputElement).value = "";
-                              (document.getElementById('sched-msg') as HTMLTextAreaElement).value = "";
-                            }
-                          });
-                        }}
-                      >
-                        Schedule Message
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={dashStyles.section}>
-                    <h3 className={dashStyles.sectionTitle}>Upcoming & Past Schedules</h3>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                          <thead>
-                            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Recipient</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Message</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Scheduled For</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Status</th>
-                              <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {scheduledMessages.map(msg => (
-                              <tr key={msg.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '1rem' }}>{msg.remoteJid.split('@')[0]}</td>
-                                <td style={{ padding: '1rem' }}>
-                                  <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {msg.message}
-                                  </div>
-                                </td>
-                                <td style={{ padding: '1rem' }}>{new Date(msg.scheduledAt).toLocaleString()}</td>
-                                <td style={{ padding: '1rem' }}>
-                                  <span style={{ 
-                                    padding: '0.2rem 0.5rem', 
-                                    borderRadius: '4px', 
-                                    fontSize: '0.7rem',
-                                    background: msg.status === 'sent' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                                    color: msg.status === 'sent' ? '#10b981' : '#f59e0b'
-                                  }}>
-                                    {msg.status}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '1rem' }}>
-                                  {msg.status === 'pending' && (
-                                    <button 
-                                      className={`${dashStyles.btn} ${dashStyles.btnOutline}`}
-                                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: 'var(--danger)' }}
-                                      onClick={() => {
-                                        if (confirm("Cancel this message?")) {
-                                          fetch(`${API_BASE}/scheduled-messages/${msg.id}`, { method: 'DELETE' }).then(() => fetchScheduled());
-                                        }
-                                      }}
-                                    >
-                                      Cancel
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                            {scheduledMessages.length === 0 && (
-                              <tr>
-                                <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                  No scheduled messages.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'analytics' && (
-                <div className={dashStyles.animateIn}>
-                  <div className={dashStyles.statGrid}>
-                    <div className={dashStyles.statCard}>
-                      <div className={dashStyles.statLabel}>Total Messages</div>
-                      <div className={dashStyles.statValue}>{analyticsData?.totalMessages || 0}</div>
-                      <div className={dashStyles.statIcon} style={{ background: 'rgba(14, 165, 233, 0.1)', color: 'var(--primary)' }}>
-                        <BarChart3 size={16} />
-                      </div>
-                    </div>
-                    <div className={dashStyles.statCard}>
-                      <div className={dashStyles.statLabel}>AI Efficiency</div>
-                      <div className={dashStyles.statValue}>100%</div>
-                      <div className={dashStyles.statSub}>Auto-replied requests</div>
-                      <div className={dashStyles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)' }}>
-                        <Zap size={16} />
-                      </div>
-                    </div>
-                    <div className={dashStyles.statCard}>
-                      <div className={dashStyles.statLabel}>Active Contacts</div>
-                      <div className={dashStyles.statValue}>{analyticsData?.topContacts?.length || 0}</div>
-                      <div className={dashStyles.statSub}>Last 30 days</div>
-                      <div className={dashStyles.statIcon} style={{ background: 'rgba(124, 58, 237, 0.1)', color: 'var(--accent)' }}>
-                        <Users size={16} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={dashStyles.formGrid}>
-                    <div className={dashStyles.section}>
-                      <h3 className={dashStyles.sectionTitle}>Daily Activity</h3>
-                      <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '0.5rem', padding: '1rem 0' }}>
-                        {(() => {
-                          const maxCount = Math.max(...(analyticsData?.dailyUsage || []).map((d: any) => d.count), 1);
-                          return (analyticsData?.dailyUsage || []).map((day: any) => (
-                            <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                              <div 
-                                style={{ 
-                                  width: '100%', 
-                                  height: `${(day.count / maxCount) * 150 + 4}px`, 
-                                  background: 'var(--primary)', 
-                                  borderRadius: '4px 4px 0 0',
-                                  boxShadow: '0 0 10px var(--primary-glow)'
-                                }} 
-                              />
-                              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', transform: 'rotate(-45deg)', marginTop: '0.5rem' }}>
-                                {new Date(day.date).toLocaleDateString(undefined, { weekday: 'short' })}
-                              </span>
-                            </div>
-                          ));
-                        })()}
-                        {(!analyticsData?.dailyUsage || analyticsData.dailyUsage.length === 0) && (
-                          <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            No activity data yet.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className={dashStyles.section}>
-                      <h3 className={dashStyles.sectionTitle}>Top Engaging Contacts</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {(analyticsData?.topContacts || []).map((contact: any) => (
-                          <div key={contact.jid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontSize: '0.9rem' }}>
-                              <div style={{ fontWeight: '600' }}>{contact.jid.split('@')[0]}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customer</div>
-                            </div>
-                            <div style={{ fontWeight: '800', color: 'var(--primary)' }}>
-                              {contact.count} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>msgs</span>
-                            </div>
-                          </div>
-                        ))}
-                        {(!analyticsData?.topContacts || analyticsData.topContacts.length === 0) && (
-                          <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                            No engaging contacts yet.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'webhooks' && (
-                <div className={dashStyles.section}>
-                  <h2 className={dashStyles.sectionTitle}><Webhook size={20} /> Webhook Integrations</h2>
-                  <p className={dashStyles.sectionDesc}>
-                    Forward incoming WhatsApp messages to external services like Zapier, Make, or your own custom API.
-                  </p>
-                  
-                  <div style={{ marginTop: '1.5rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: '#8b949e' }}>Webhook URL</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <input 
-                        className={dashStyles.input} 
-                        style={{ margin: 0 }}
-                        placeholder="https://your-api.com/webhook"
-                        value={webhookUrl}
-                        onChange={e => setWebhookUrl(e.target.value)}
-                      />
-                      <button 
-                        className={dashStyles.btn} 
-                        onClick={handleSaveWebhook}
-                        disabled={savingWebhook || !webhookUrl}
-                      >
-                        {savingWebhook ? "Saving..." : "Save"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {activeTab === 'auto-replies' && (
                 <div className={dashStyles.animateIn}>
                   <div className={dashStyles.section}>
@@ -1288,57 +761,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-
-              {activeTab === 'services' && (
-                <div className={dashStyles.animateIn}>
-                  <div className={dashStyles.section}>
-                    <h2 className={dashStyles.sectionTitle}><Zap size={16} /> My Services</h2>
-                    <p className={dashStyles.sectionDesc} style={{ marginBottom: '1.25rem' }}>
-                      List your products or services. Customers can ask VakaBot about them.
-                    </p>
-                   
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-                      <div className={dashStyles.formGrid}>
-                        <div className={authStyles.field} style={{ marginBottom: 0 }}>
-                          <label className={authStyles.label} style={{ fontSize: '0.75rem' }}>Service Name</label>
-                          <input className={dashStyles.input} style={{ margin: 0 }} placeholder="e.g. Logo Design" value={newServiceName} onChange={e => setNewServiceName(e.target.value)} />
-                        </div>
-                        <div className={authStyles.field} style={{ marginBottom: 0 }}>
-                          <label className={authStyles.label} style={{ fontSize: '0.75rem' }}>Description</label>
-                          <input className={dashStyles.input} style={{ margin: 0 }} placeholder="What's included" value={newServiceDesc} onChange={e => setNewServiceDesc(e.target.value)} />
-                        </div>
-                        <div className={authStyles.field} style={{ marginBottom: 0 }}>
-                          <label className={authStyles.label} style={{ fontSize: '0.75rem' }}>Price (Optional)</label>
-                          <input className={dashStyles.input} style={{ margin: 0 }} placeholder="e.g. $50" value={newServicePrice} onChange={e => setNewServicePrice(e.target.value)} />
-                        </div>
-                        <button className={dashStyles.btn} onClick={handleAddService} disabled={addingService || !newServiceName}>
-                          {addingService ? "..." : "Add Service"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-                      {services.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', padding: '2rem', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No services added yet.</p>
-                        </div>
-                      ) : (
-                        services.map(service => (
-                          <div key={service.id} style={{ padding: '1.25rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                            <h3 style={{ fontSize: '0.95rem', marginBottom: '0.35rem', color: 'var(--primary)', fontWeight: 700 }}>{service.name}</h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '0.75rem' }}>{service.description}</p>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>{service.price || "Contact for price"}</span>
-                              <button onClick={() => handleDeleteService(service.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Delete</button>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
 
               {activeTab === 'plans' && (
                 <div className={dashStyles.animateIn}>
@@ -1479,26 +901,21 @@ export default function DashboardPage() {
                       {savingProfile ? "Saving..." : "Save Business Profile"}
                     </button>
                   </div>
-                </div>
-                </div>
-              )}
 
-              {activeTab === 'settings' && (
-                <div className={dashStyles.animateIn}>
-                <div className={dashStyles.section}>
-                  <h2 className={dashStyles.sectionTitle}><Settings size={16} /> Engine Settings</h2>
-                  <p className={dashStyles.sectionDesc} style={{ marginBottom: '1rem' }}>Manage your WhatsApp engine connection.</p>
-                  <div style={{ padding: '1.25rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '12px' }}>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1rem' }}>⚠️ Disconnecting will stop all automated replies and require re-pairing your phone.</p>
+                  <div style={{ marginTop: '3rem', padding: '1.25rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '12px' }}>
+                    <h3 style={{ fontSize: '1rem', color: '#ef4444', marginBottom: '0.5rem', fontWeight: 700 }}>Danger Zone</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1rem' }}>Disconnecting will stop all automated replies and require re-pairing your phone.</p>
                     <button 
                       className={dashStyles.btn} 
-                      style={{ background: '#ef4444', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)' }}
+                      style={{ background: '#ef4444', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)', width: 'auto' }}
                       onClick={handleDisconnect}
                       disabled={disconnecting}
                     >
-                      {disconnecting ? "Disconnecting..." : "Disconnect Engine"}
+                      {disconnecting ? "Disconnecting..." : "Disconnect WhatsApp Engine"}
                     </button>
                   </div>
+                </div>
+              )}
                 </div>
                 </div>
               )}
