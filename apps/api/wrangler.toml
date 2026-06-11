@@ -1,0 +1,28 @@
+name = "velo-api"
+main = "src/index.ts"
+compatibility_date = "2024-04-03"
+
+[vars]
+EVOLUTION_API_URL = "https://vakabot-engine.onrender.com"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[queues.producers]]
+binding = "MESSAGE_QUEUE"
+queue = "velo-messages"
+
+[[queues.consumers]]
+queue = "velo-messages"
+max_batch_size = 10
+max_batch_timeout = 0
+max_retries = 3
+dead_letter_queue = "velo-messages-dlq"
+
+[[durable_objects.bindings]]
+name = "MANAGER"
+class_name = "ConnectionManager"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ConnectionManager"]

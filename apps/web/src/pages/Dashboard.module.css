@@ -1,0 +1,206 @@
+.layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-pure);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px; /* Focused width for a clean form */
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 3.5rem;
+}
+
+.logoPill {
+  width: 32px;
+  height: 32px;
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+.brandName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 3.5rem;
+  line-height: 1.5;
+}
+
+/* Clean Form Styles */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-align: left;
+  padding-left: 1.5rem;
+}
+
+.input {
+  width: 100%;
+  padding: 1.1rem 1.75rem;
+  border-radius: 9999px; /* Sleek pill shape */
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-subtle);
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  color: var(--text-main);
+}
+
+.input:focus {
+  border-color: var(--accent-primary);
+  background-color: var(--bg-pure);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03), 0 0 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Pairing State */
+.pairingBox {
+  background-color: var(--bg-subtle);
+  padding: 3rem 2rem;
+  border-radius: 40px;
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.codeLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.codeString {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: var(--accent-primary);
+  font-family: 'Inter', sans-serif; /* Keep it clean geometric */
+}
+
+.codePlaceholder {
+  height: 4rem;
+  width: 240px;
+  background-color: var(--border-subtle);
+  border-radius: 20px;
+  margin: 0 auto;
+  animation: pulse 1.5s infinite;
+}
+
+.instructions {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.instructions b {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* Success State */
+.successCircle {
+  width: 80px;
+  height: 80px;
+  background-color: #10b981;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2.5rem;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 0, 0, 0.05);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile Portrait Safety */
+@media (max-width: 480px) {
+  .title { font-size: 2rem; }
+  .codeString { font-size: 2.5rem; }
+  .layout { padding: 1.5rem; justify-content: flex-start; padding-top: 5rem; }
+}

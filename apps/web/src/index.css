@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-text-primary;
+  }
+
+  /* Labels: 500 weight uppercase 11px tracking-wide */
+  .label-sm {
+    @apply text-[11px] font-medium uppercase tracking-wide text-text-light;
+  }
+}
+
+@layer components {
+  .transition-default {
+    @apply transition-all duration-150 ease-out;
+  }
+}

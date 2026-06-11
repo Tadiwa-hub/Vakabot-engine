@@ -1,0 +1,92 @@
+.authPage {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Ensure top-alignment for consistent spacing */
+  background-color: var(--bg-pure);
+  padding: 5rem 1rem 2rem; /* Increased top padding to 5rem */
+}
+
+.authContainer {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brandHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.logoPill {
+  width: 28px;
+  height: 28px;
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+}
+
+.brandName {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.pitchText {
+  margin-bottom: 3.5rem; /* Increased from 2rem for more space above the first label */
+  width: 100%;
+  padding: 0 0.5rem; /* Inner padding for text safety */
+}
+
+.pitchText h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.pitchText p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .authPage {
+    padding-top: 5rem;
+  }
+  
+  .pitchText h2 {
+    font-size: 1.35rem; /* Significantly smaller to prevent clipping */
+  }
+
+  .pitchText p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .authPage {
+    padding: 2rem 0.75rem;
+  }
+}
